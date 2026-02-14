@@ -7,7 +7,7 @@ class PlaceScore(BaseModel):
     place_id: str
     rating: float
     user_ratings_total: int
-    price_level: Optional[str]
+    price_level: Optional[int]
     hidden_gem_score: float
     night_score: float
     hygiene_score: float

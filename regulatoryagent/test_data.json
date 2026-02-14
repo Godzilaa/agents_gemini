@@ -1,0 +1,298 @@
+{
+  "test_scenarios": {
+    "regulatory_analysis_tests": [
+      {
+        "test_name": "High Risk - Central Business District with Multiple Zones",
+        "endpoint": "POST /regulatory-analysis",
+        "request_payload": {
+          "latitude": 19.0750,
+          "longitude": 72.8750,
+          "vehicle_type": "bike"
+        },
+        "expected_response_structure": {
+          "risk_score": "float (expected: 7.0-9.0)",
+          "risk_level": "high",
+          "applicable_zones": "array of zone objects",
+          "warnings": "array of warning messages",
+          "recommendations": "array of recommendation messages",
+          "current_location": {
+            "latitude": 19.0750,
+            "longitude": 72.8750
+          },
+          "snapped_location": {
+            "latitude": "float (GPS corrected)",
+            "longitude": "float (GPS corrected)"
+          },
+          "police_density_score": "float (0.0-1.0)",
+          "government_area_risk": "float (0.0-1.0)"
+        }
+      },
+      {
+        "test_name": "Moderate Risk - School Zone during active hours",
+        "endpoint": "POST /regulatory-analysis",
+        "request_payload": {
+          "latitude": 19.0770,
+          "longitude": 72.8780,
+          "vehicle_type": "car"
+        },
+        "description": "Testing car in school zone area"
+      },
+      {
+        "test_name": "Low Risk - Outside all enforcement zones",
+        "endpoint": "POST /regulatory-analysis",
+        "request_payload": {
+          "latitude": 19.1000,
+          "longitude": 72.9000,
+          "vehicle_type": "auto"
+        },
+        "description": "Testing location far from any enforcement zones"
+      },
+      {
+        "test_name": "Vehicle Type Specific - Bike in Helmet Zone",
+        "endpoint": "POST /regulatory-analysis",
+        "request_payload": {
+          "latitude": 19.0775,
+          "longitude": 72.8775,
+          "vehicle_type": "bike"
+        },
+        "description": "Testing bike specifically in helmet enforcement zone"
+      },
+      {
+        "test_name": "Invalid Location - Out of bounds coordinates",
+        "endpoint": "POST /regulatory-analysis",
+        "request_payload": {
+          "latitude": 200.0,
+          "longitude": 200.0,
+          "vehicle_type": "car"
+        },
+        "expected_error": "Should handle invalid coordinates gracefully"
+      }
+    ],
+    
+    "nearby_police_tests": [
+      {
+        "test_name": "Find police stations near busy area",
+        "endpoint": "GET /nearby-police",
+        "query_params": {
+          "latitude": 19.0759,
+          "longitude": 72.8777,
+          "radius": 5000
+        },
+        "expected_response": {
+          "count": "integer",
+          "police_stations": [
+            {
+              "name": "string",
+              "latitude": "float",
+              "longitude": "float", 
+              "distance_km": "float"
+            }
+          ]
+        }
+      },
+      {
+        "test_name": "Large radius search",
+        "endpoint": "GET /nearby-police",
+        "query_params": {
+          "latitude": 19.0750,
+          "longitude": 72.8750,
+          "radius": 10000
+        }
+      },
+      {
+        "test_name": "Small radius search",
+        "endpoint": "GET /nearby-police",
+        "query_params": {
+          "latitude": 19.0750,
+          "longitude": 72.8750,
+          "radius": 1000
+        }
+      }
+    ],
+
+    "nearby_toll_booths_tests": [
+      {
+        "test_name": "Find toll booths on highway route",
+        "endpoint": "GET /nearby-toll-booths",
+        "query_params": {
+          "latitude": 19.0759,
+          "longitude": 72.8777,
+          "radius": 5000
+        },
+        "expected_response": {
+          "count": "integer",
+          "toll_booths": "array of toll booth objects"
+        }
+      },
+      {
+        "test_name": "Urban area toll search",
+        "endpoint": "GET /nearby-toll-booths", 
+        "query_params": {
+          "latitude": 19.0800,
+          "longitude": 72.8800,
+          "radius": 3000
+        }
+      }
+    ],
+
+    "nearby_parking_tests": [
+      {
+        "test_name": "Find parking in business district",
+        "endpoint": "GET /nearby-parking",
+        "query_params": {
+          "latitude": 19.0759,
+          "longitude": 72.8777,
+          "radius": 2000
+        },
+        "expected_response": {
+          "count": "integer", 
+          "parking_lots": "array of parking lot objects"
+        }
+      },
+      {
+        "test_name": "Limited radius parking search",
+        "endpoint": "GET /nearby-parking",
+        "query_params": {
+          "latitude": 19.0775,
+          "longitude": 72.8785,
+          "radius": 500
+        }
+      }
+    ],
+
+    "zones_tests": [
+      {
+        "test_name": "Get all regulation zones",
+        "endpoint": "GET /zones",
+        "expected_response": {
+          "total_zones": 4,
+          "zones": [
+            {
+              "id": "zone_helmet_mg_road",
+              "zone_type": "helmet",
+              "name": "MG Road Helmet Enforcement",
+              "description": "Strict helmet enforcement on MG Road stretch",
+              "active_hours": {"start": "07:00", "end": "22:00"},
+              "risk_weight": 2.0,
+              "latitude_range": [19.0750, 19.0800],
+              "longitude_range": [72.8750, 72.8800]
+            }
+          ]
+        }
+      }
+    ],
+
+    "health_check_tests": [
+      {
+        "test_name": "API Health Check",
+        "endpoint": "GET /health",
+        "expected_response": {
+          "status": "ok",
+          "message": "Regulatory Agent API is running",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  },
+
+  "sample_test_data": {
+    "mumbai_coordinates": {
+      "bandra": {"latitude": 19.0596, "longitude": 72.8295},
+      "andheri": {"latitude": 19.1136, "longitude": 72.8697},
+      "dadar": {"latitude": 19.0178, "longitude": 72.8478},
+      "colaba": {"latitude": 18.9067, "longitude": 72.8147},
+      "powai": {"latitude": 19.1197, "longitude": 72.9073}
+    },
+    
+    "vehicle_types": ["bike", "car", "auto"],
+    
+    "time_scenarios": {
+      "morning_rush": "08:00",
+      "afternoon": "14:00", 
+      "evening_rush": "18:00",
+      "night": "22:00",
+      "early_morning": "05:00"
+    },
+
+    "expected_zone_types": [
+      "helmet", "parking", "signal_camera", "tow_zone", 
+      "school_zone", "one_way_strict", "heavy_traffic", "no_honk"
+    ],
+
+    "expected_risk_levels": ["low", "moderate", "high"]
+  },
+
+  "curl_commands": {
+    "regulatory_analysis": "curl -X POST \"http://localhost:8001/regulatory-analysis\" -H \"Content-Type: application/json\" -d '{\"latitude\": 19.0750, \"longitude\": 72.8750, \"vehicle_type\": \"bike\"}'",
+    
+    "nearby_police": "curl -X GET \"http://localhost:8001/nearby-police?latitude=19.0759&longitude=72.8777&radius=5000\"",
+    
+    "nearby_toll_booths": "curl -X GET \"http://localhost:8001/nearby-toll-booths?latitude=19.0759&longitude=72.8777&radius=5000\"",
+    
+    "nearby_parking": "curl -X GET \"http://localhost:8001/nearby-parking?latitude=19.0759&longitude=72.8777&radius=2000\"",
+    
+    "all_zones": "curl -X GET \"http://localhost:8001/zones\"",
+    
+    "health_check": "curl -X GET \"http://localhost:8001/health\""
+  },
+
+  "performance_test_data": {
+    "load_test_scenarios": [
+      {
+        "concurrent_requests": 10,
+        "duration_seconds": 60,
+        "endpoints": ["/regulatory-analysis", "/nearby-police", "/zones"]
+      },
+      {
+        "concurrent_requests": 50,
+        "duration_seconds": 30,
+        "endpoints": ["/health"]
+      }
+    ],
+    
+    "stress_test_coordinates": [
+      {"latitude": 19.0750, "longitude": 72.8750},
+      {"latitude": 19.0770, "longitude": 72.8780},
+      {"latitude": 19.0690, "longitude": 72.8710},
+      {"latitude": 19.0800, "longitude": 72.8800},
+      {"latitude": 19.0720, "longitude": 72.8720}
+    ]
+  },
+
+  "error_test_scenarios": [
+    {
+      "test_name": "Invalid vehicle type",
+      "payload": {
+        "latitude": 19.0750,
+        "longitude": 72.8750,
+        "vehicle_type": "invalid_vehicle"
+      },
+      "expected_error": "422 Unprocessable Entity"
+    },
+    {
+      "test_name": "Missing required fields",
+      "payload": {
+        "latitude": 19.0750
+      },
+      "expected_error": "422 Unprocessable Entity"
+    },
+    {
+      "test_name": "Invalid coordinate format",
+      "payload": {
+        "latitude": "invalid",
+        "longitude": 72.8750,
+        "vehicle_type": "bike"
+      },
+      "expected_error": "422 Unprocessable Entity"
+    },
+    {
+      "test_name": "Extreme coordinates",
+      "payload": {
+        "latitude": 999.999,
+        "longitude": 999.999,
+        "vehicle_type": "car"
+      },
+      "expected_error": "Should handle gracefully"
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "place_details_endpoint_tests": {
+    "endpoint": "GET /place/{place_id}",
+    "description": "Get detailed information about a specific restaurant using Google Places Place ID",
+    
+    "test_cases": [
+      {
+        "test_name": "Valid Place ID - Popular Restaurant",
+        "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+        "description": "Test with a well-known place ID (Google Sydney Office as example)",
+        "curl_command": "curl -X GET \"http://localhost:8000/place/ChIJN1t_tDeuEmsRUsoyG83frY4\"",
+        "expected_response_structure": {
+          "name": "string",
+          "place_id": "string",
+          "rating": "float",
+          "user_ratings_total": "integer",
+          "price_level": "integer (1-4) or null",
+          "geometry": {
+            "location": {
+              "lat": "float",
+              "lng": "float"
+            }
+          },
+          "opening_hours": {
+            "open_now": "boolean",
+            "periods": "array"
+          },
+          "reviews": "array of review objects",
+          "types": "array of strings",
+          "formatted_address": "string",
+          "international_phone_number": "string",
+          "website": "string"
+        }
+      },
+      {
+        "test_name": "Invalid Place ID",
+        "place_id": "invalid_place_id_12345",
+        "description": "Test with invalid place ID",
+        "curl_command": "curl -X GET \"http://localhost:8000/place/invalid_place_id_12345\"",
+        "expected_response": {
+          "status_code": 404,
+          "detail": "Place not found"
+        }
+      },
+      {
+        "test_name": "Empty Place ID", 
+        "place_id": "",
+        "description": "Test with empty place ID",
+        "curl_command": "curl -X GET \"http://localhost:8000/place/\"",
+        "expected_response": {
+          "status_code": 404,
+          "detail": "Not Found"
+        }
+      }
+    ],
+
+    "how_to_get_place_ids": {
+      "method_1": "From recommendations endpoint",
+      "description_1": "First call /recommendations to get a list of restaurants with place_ids",
+      "example_1": {
+        "step_1": "curl -X POST \"http://localhost:8000/recommendations\" -H \"Content-Type: application/json\" -d '{\"latitude\": 19.0760, \"longitude\": 72.8777, \"radius\": 2000, \"limit\": 5}'",
+        "step_2": "Copy a place_id from the response",
+        "step_3": "curl -X GET \"http://localhost:8000/place/{PLACE_ID_FROM_STEP_1}\""
+      },
+
+      "method_2": "Google Places API", 
+      "description_2": "Use Google Places Text Search or Nearby Search to find place IDs",
+      
+      "method_3": "Sample Mumbai Restaurant Place IDs",
+      "sample_place_ids": [
+        {
+          "name": "Leopold Cafe (Mumbai)",
+          "place_id": "ChIJe3zKKQi6wjsRpMl9WrqRo-Y",
+          "area": "Colaba"
+        },
+        {
+          "name": "Trishna (Mumbai)", 
+          "place_id": "ChIJ_2rRYgm6wjsRjJ9OI7p2FE8",
+          "area": "Fort"
+        },
+        {
+          "name": "Britannia & Co (Mumbai)",
+          "place_id": "ChIJ3xUz1Qy6wjsRQmEoK9cDn6o",
+          "area": "Ballard Estate"
+        }
+      ]
+    },
+
+    "testing_workflow": {
+      "step_1": {
+        "action": "Start the Food Agent API server",
+        "command": "python main.py",
+        "expected": "Server running on http://localhost:8000"
+      },
+      "step_2": {
+        "action": "Get recommendations to obtain place IDs",
+        "command": "curl -X POST \"http://localhost:8000/recommendations\" -H \"Content-Type: application/json\" -d '{\"latitude\": 19.0760, \"longitude\": 72.8777, \"radius\": 2000, \"limit\": 5}'"
+      },
+      "step_3": {
+        "action": "Copy a place_id from the recommendations response",
+        "example": "ChIJrTLr-GyuEmsRBfy61i59si0"
+      },
+      "step_4": {
+        "action": "Test the place details endpoint",
+        "command": "curl -X GET \"http://localhost:8000/place/ChIJrTLr-GyuEmsRBfy61i59si0\""
+      },
+      "step_5": {
+        "action": "Compare data richness",
+        "description": "The /place/{place_id} endpoint returns raw Google Places data, while /recommendations returns processed data with scores"
+      }
+    },
+
+    "complete_test_script": {
+      "bash_script": "#!/bin/bash\n\n# Test script for Food Agent place details endpoint\necho \"Testing Food Agent Place Details Endpoint\"\n\nBASE_URL=\"http://localhost:8000\"\n\n# Test 1: Health check\necho \"\\n1. Testing health check...\"\ncurl -X GET \"$BASE_URL/health\"\n\n# Test 2: Get recommendations to obtain place IDs\necho \"\\n\\n2. Getting recommendations to find place IDs...\"\nRECOMMENDATIONS=$(curl -s -X POST \"$BASE_URL/recommendations\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"latitude\": 19.0760, \"longitude\": 72.8777, \"radius\": 2000, \"limit\": 3}')\n\necho \"$RECOMMENDATIONS\" | jq '.' 2>/dev/null || echo \"$RECOMMENDATIONS\"\n\n# Test 3: Extract first place_id and test details endpoint\necho \"\\n\\n3. Testing place details with valid place ID...\"\n# You'll need to manually extract a place_id from step 2 output\n# Example with a sample place ID:\ncurl -X GET \"$BASE_URL/place/ChIJN1t_tDeuEmsRUsoyG83frY4\"\n\n# Test 4: Test with invalid place ID\necho \"\\n\\n4. Testing with invalid place ID...\"\ncurl -X GET \"$BASE_URL/place/invalid_place_id_test\"\n\necho \"\\n\\nTest completed!\"",
+      
+      "powershell_script": "# PowerShell test script for Food Agent place details endpoint\nWrite-Host \"Testing Food Agent Place Details Endpoint\"\n\n$BaseUrl = \"http://localhost:8000\"\n\n# Test 1: Health check\nWrite-Host \"`n1. Testing health check...\"\nInvoke-RestMethod -Uri \"$BaseUrl/health\" -Method Get\n\n# Test 2: Get recommendations\nWrite-Host \"`n2. Getting recommendations...\"\n$recommendationsBody = @{\n    latitude = 19.0760\n    longitude = 72.8777\n    radius = 2000\n    limit = 3\n} | ConvertTo-Json\n\n$recommendations = Invoke-RestMethod -Uri \"$BaseUrl/recommendations\" -Method Post -Body $recommendationsBody -ContentType \"application/json\"\n$recommendations | ConvertTo-Json -Depth 10\n\n# Test 3: Test with sample place ID\nWrite-Host \"`n3. Testing place details...\"\ntry {\n    $placeDetails = Invoke-RestMethod -Uri \"$BaseUrl/place/ChIJN1t_tDeuEmsRUsoyG83frY4\" -Method Get\n    $placeDetails | ConvertTo-Json -Depth 10\n} catch {\n    Write-Host \"Error: $_\" -ForegroundColor Red\n}\n\n# Test 4: Test with invalid place ID\nWrite-Host \"`n4. Testing invalid place ID...\"\ntry {\n    Invoke-RestMethod -Uri \"$BaseUrl/place/invalid_test_id\" -Method Get\n} catch {\n    Write-Host \"Expected error: $_\" -ForegroundColor Yellow\n}\n\nWrite-Host \"`nTest completed!\""
+    },
+
+    "expected_response_examples": {
+      "successful_response": {
+        "name": "Restaurant Name",
+        "place_id": "ChIJrTLr-GyuEmsRBfy61i59si0",
+        "rating": 4.2,
+        "user_ratings_total": 1850,
+        "price_level": 2,
+        "geometry": {
+          "location": {
+            "lat": 19.0760,
+            "lng": 72.8777
+          }
+        },
+        "formatted_address": "123 Restaurant St, Mumbai, Maharashtra 400001, India",
+        "international_phone_number": "+91 22 1234 5678",
+        "opening_hours": {
+          "open_now": true,
+          "periods": []
+        },
+        "reviews": [
+          {
+            "author_name": "User Name",
+            "rating": 5,
+            "text": "Great food and service!",
+            "time": 1234567890
+          }
+        ],
+        "types": ["restaurant", "food", "point_of_interest", "establishment"],
+        "website": "http://restaurantwebsite.com"
+      },
+      
+      "error_response": {
+        "detail": "Place not found"
+      }
+    }
+  }
+}

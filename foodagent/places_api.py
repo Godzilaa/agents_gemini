@@ -2,7 +2,7 @@ import requests
 from typing import List, Dict, Optional
 import os
 
-API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY","AIzaSyCdlARRKdq2rTH1C0N4YEPpE6cgUjKZXg8")
 
 NEARBY_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 PLACE_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
