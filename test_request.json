@@ -1,0 +1,22 @@
+{
+  "user_context": {
+    "location": {
+      "latitude": 19.0760,
+      "longitude": 72.8777,
+      "address": "Bandra West, Mumbai"
+    },
+    "vehicle_type": "bike",
+    "preferences": {
+      "radius": 2000,
+      "limit": 10,
+      "cuisine_type": "indian"
+    },
+    "urgency_level": "medium",
+    "activity_type": "dining"
+  },
+  "query_type": "dining_recommendation",
+  "additional_params": {
+    "include_safety_analysis": true,
+    "check_events": true
+  }
+}

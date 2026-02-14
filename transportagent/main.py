@@ -2,7 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import sys
+from pathlib import Path
 from datetime import datetime
+
+# Add parent directory to path for A2A imports
+sys.path.append(str(Path(__file__).parent.parent))
 
 try:
     from .models import TransportRequest, TransportResponse
@@ -36,6 +41,8 @@ except ImportError:
     )
     from traffic_api import get_area_type, get_travel_time
     from language_engine import translate_advisory
+
+from a2a_models import AgentMessage, AgentType, MessageType
 
 # Load environment variables
 load_dotenv()
@@ -129,6 +136,50 @@ async def analyze_transport(request: TransportRequest):
         confidence_score=confidence_score
     )
 
+
+@app.post("/a2a/receive")
+async def receive_a2a_message(message: AgentMessage):
+    """Receive A2A messages from other agents"""
+    print(f"Transport Agent received message from {message.sender_agent}: {message.message_type}")
+    
+    # Process transport analysis requests from other agents
+    if message.message_type == MessageType.REQUEST:
+        payload = message.payload
+        
+        # Handle transport analysis requests
+        if "origin_latitude" in payload and "destination_latitude" in payload:
+            try:
+                request = TransportRequest(
+                    origin_latitude=payload["origin_latitude"],
+                    origin_longitude=payload["origin_longitude"],
+                    destination_latitude=payload["destination_latitude"],
+                    destination_longitude=payload["destination_longitude"],
+                    vehicle_type=payload.get("vehicle_type", "car"),
+                    current_time=payload.get("current_time", datetime.now().isoformat()),
+                    language=payload.get("language", "en")
+                )
+                
+                # Reuse the existing transport analysis logic
+                result = await analyze_transport(request)
+                
+                return {
+                    "status": "success",
+                    "agent_type": "transport",
+                    "message_id": message.message_id,
+                    "data": result.model_dump()
+                }
+                
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "agent_type": "transport",
+                    "message_id": message.message_id,
+                    "error": str(e)
+                }
+    
+    return {"status": "received", "message_id": message.message_id}
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

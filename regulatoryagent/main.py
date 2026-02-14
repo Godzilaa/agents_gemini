@@ -2,8 +2,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path for A2A imports
+sys.path.append(str(Path(__file__).parent.parent))
 
 from models import UserRequest, RegulatoryAdvice, Location
+from a2a_models import AgentMessage, AgentType, MessageType
 from google_apis import (
     snap_to_road,
     find_nearby_police_stations,
@@ -258,6 +264,45 @@ async def get_all_zones():
         "total_zones": len(MOCK_ZONES),
         "zones": MOCK_ZONES
     }
+
+
+@app.post("/a2a/receive")
+async def receive_a2a_message(message: AgentMessage):
+    """Receive A2A messages from other agents"""
+    print(f"Regulatory Agent received message from {message.sender_agent}: {message.message_type}")
+    
+    # Process regulatory analysis requests from other agents
+    if message.message_type == MessageType.REQUEST:
+        payload = message.payload
+        
+        # Handle regulatory analysis requests
+        if "latitude" in payload and "longitude" in payload and "vehicle_type" in payload:
+            try:
+                request = UserRequest(
+                    latitude=payload["latitude"],
+                    longitude=payload["longitude"],
+                    vehicle_type=payload["vehicle_type"]
+                )
+                
+                # Reuse the existing regulatory analysis logic
+                result = await analyze_regulatory_risk(request)
+                
+                return {
+                    "status": "success",
+                    "agent_type": "regulatory",
+                    "message_id": message.message_id,
+                    "data": result.model_dump()
+                }
+                
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "agent_type": "regulatory", 
+                    "message_id": message.message_id,
+                    "error": str(e)
+                }
+    
+    return {"status": "received", "message_id": message.message_id}
 
 
 if __name__ == "__main__":

@@ -1,0 +1,76 @@
+# .dockerignore - Exclude files from Docker build context
+
+# Git
+.git
+.gitignore
+*.md
+README*
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.pytest_cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.cache
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Scripts (not needed inside containers)
+start_agents.*
+start_docker.*
+*.sh
+*.ps1
+
+# Test files
+test_*
+*_test*
+*_tests*
+multi_agent_tests.json
+
+# Documentation
+docs/
+*.txt
+*.json
+!requirements*.txt
+!test_request.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp

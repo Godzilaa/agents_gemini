@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # Food Agent
+  food-agent:
+    build:
+      context: ./foodagent
+      dockerfile: Dockerfile
+    container_name: food-agent
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - PYTHONPATH=/app
+    volumes:
+      - ./foodagent/.env:/app/.env:ro
+    networks:
+      - agents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Regulatory Agent  
+  regulatory-agent:
+    build:
+      context: ./regulatoryagent
+      dockerfile: Dockerfile
+    container_name: regulatory-agent
+    ports:
+      - "8001:8001"
+    environment:
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - PYTHONPATH=/app
+    networks:
+      - agents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Transport Agent
+  transport-agent:
+    build:
+      context: ./transportagent
+      dockerfile: Dockerfile
+    container_name: transport-agent
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - agents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Festival Agent
+  festival-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.festival
+    container_name: festival-agent
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - agents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Master Decision Agent
+  decision-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.decision
+    container_name: decision-agent
+    ports:
+      - "8004:8004"
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - agents-network
+    depends_on:
+      food-agent:
+        condition: service_healthy
+      regulatory-agent:
+        condition: service_healthy
+      transport-agent:
+        condition: service_healthy
+      festival-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+networks:
+  agents-network:
+    driver: bridge
+    name: multi-agents-network
+
+volumes:
+  agent-data:
+    name: multi-agents-data

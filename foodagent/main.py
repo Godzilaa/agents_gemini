@@ -2,8 +2,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path for A2A imports
+sys.path.append(str(Path(__file__).parent.parent))
 
 from models import RestaurantRecommendation, NearbySearchRequest, PlaceScore
+from a2a_models import AgentMessage, AgentType, MessageType
 from places_api import fetch_nearby_restaurants, fetch_place_details
 from scoring_engine import (
     compute_hidden_gem_score,
@@ -143,6 +149,46 @@ async def get_place_details(place_id: str):
         raise HTTPException(status_code=404, detail="Place not found")
 
     return details
+
+
+@app.post("/a2a/receive")
+async def receive_a2a_message(message: AgentMessage):
+    """Receive A2A messages from other agents"""
+    print(f"Food Agent received message from {message.sender_agent}: {message.message_type}")
+    
+    # Process food-related requests from other agents
+    if message.message_type == MessageType.REQUEST:
+        payload = message.payload
+        
+        # Handle recommendation requests
+        if "latitude" in payload and "longitude" in payload:
+            try:
+                request = NearbySearchRequest(
+                    latitude=payload["latitude"],
+                    longitude=payload["longitude"],
+                    radius=payload.get("radius", 2000),
+                    limit=payload.get("limit", 20)
+                )
+                
+                # Reuse the existing recommendation logic
+                result = await get_recommendations(request)
+                
+                return {
+                    "status": "success",
+                    "agent_type": "food",
+                    "message_id": message.message_id,
+                    "data": result.model_dump()
+                }
+                
+            except Exception as e:
+                return {
+                    "status": "error", 
+                    "agent_type": "food",
+                    "message_id": message.message_id,
+                    "error": str(e)
+                }
+    
+    return {"status": "received", "message_id": message.message_id}
 
 
 if __name__ == "__main__":

@@ -1,0 +1,253 @@
+{
+  "multi_agent_system_tests": {
+    "description": "Comprehensive test suite for A2A communication and decision making",
+    "base_urls": {
+      "food_agent": "http://localhost:8000",
+      "regulatory_agent": "http://localhost:8001", 
+      "transport_agent": "http://localhost:8002",
+      "festival_agent": "http://localhost:8003",
+      "decision_agent": "http://localhost:8004"
+    },
+
+    "test_scenarios": [
+      {
+        "name": "Complete System Health Check",
+        "type": "health_check",
+        "tests": [
+          {
+            "description": "Check all agents are running",
+            "endpoints": [
+              "GET http://localhost:8000/health",
+              "GET http://localhost:8001/health", 
+              "GET http://localhost:8002/health",
+              "GET http://localhost:8003/health",
+              "GET http://localhost:8004/health"
+            ]
+          },
+          {
+            "description": "Check master agent status dashboard",
+            "endpoint": "GET http://localhost:8004/health",
+            "expected_fields": ["status", "agent_status", "decisions_processed"]
+          }
+        ]
+      },
+
+      {
+        "name": "Individual Agent Testing",
+        "type": "single_agent",
+        "tests": [
+          {
+            "agent": "food",
+            "endpoint": "POST http://localhost:8000/recommendations",
+            "payload": {
+              "latitude": 19.0760,
+              "longitude": 72.8777,
+              "radius": 2000,
+              "limit": 5
+            },
+            "expected_response": "RestaurantRecommendation"
+          },
+          {
+            "agent": "regulatory",
+            "endpoint": "POST http://localhost:8001/regulatory-analysis", 
+            "payload": {
+              "latitude": 19.0760,
+              "longitude": 72.8777,
+              "vehicle_type": "bike"
+            },
+            "expected_response": "RegulatoryAdvice"
+          },
+          {
+            "agent": "festival",
+            "endpoint": "POST http://localhost:8003/scan-events",
+            "payload": {
+              "location": "19.0760,72.8777",
+              "radius_km": 5,
+              "date_range": []
+            },
+            "expected_response": "EventResponse"
+          }
+        ]
+      },
+
+      {
+        "name": "A2A Communication Testing", 
+        "type": "inter_agent",
+        "tests": [
+          {
+            "description": "Test A2A message reception",
+            "endpoint": "POST http://localhost:8000/a2a/receive",
+            "payload": {
+              "message_id": "test_001",
+              "sender_agent": "decision",
+              "receiver_agent": "food",
+              "message_type": "request",
+              "priority": "medium",
+              "timestamp": "2026-02-14T10:00:00",
+              "payload": {
+                "latitude": 19.0760,
+                "longitude": 72.8777,
+                "radius": 2000,
+                "limit": 5
+              }
+            }
+          }
+        ]
+      },
+
+      {
+        "name": "Master Decision Agent Testing",
+        "type": "decision_making", 
+        "tests": [
+          {
+            "description": "Quick area analysis",
+            "endpoint": "GET http://localhost:8004/quick-analysis",
+            "params": {
+              "latitude": 19.0760,
+              "longitude": 72.8777,
+              "vehicle_type": "car",
+              "analysis_type": "area_analysis"
+            }
+          },
+          {
+            "description": "Dining recommendation with safety",
+            "endpoint": "GET http://localhost:8004/dining-recommendation",
+            "params": {
+              "latitude": 19.0760,
+              "longitude": 72.8777,
+              "vehicle_type": "bike",
+              "radius": 2000,
+              "cuisine": "indian"
+            }
+          },
+          {
+            "description": "Route safety analysis",
+            "endpoint": "GET http://localhost:8004/route-safety",
+            "params": {
+              "origin_lat": 19.0760,
+              "origin_lng": 72.8777,
+              "dest_lat": 19.0800,
+              "dest_lng": 72.8800,
+              "vehicle_type": "bike"
+            }
+          },
+          {
+            "description": "Master decision endpoint",
+            "endpoint": "POST http://localhost:8004/decide",
+            "payload_file": "test_request.json"
+          }
+        ]
+      },
+
+      {
+        "name": "Cross-Agent Data Flow Testing",
+        "type": "integration",
+        "tests": [
+          {
+            "description": "Food + Regulatory coordination",
+            "scenario": "User wants bike-friendly restaurants in high-enforcement area",
+            "location": {"latitude": 19.0775, "longitude": 72.8775},
+            "vehicle": "bike",
+            "expected_warnings": ["helmet enforcement", "traffic cameras"]
+          },
+          {
+            "description": "All agents coordination",
+            "scenario": "Complete area analysis during festival",
+            "location": {"latitude": 19.0176, "longitude": 72.8562},
+            "date": "2026-09-01",
+            "expected_alerts": ["high festival impact", "road closures", "parking restrictions"]
+          }
+        ]
+      }
+    ],
+
+    "performance_tests": [
+      {
+        "name": "Decision Response Time",
+        "description": "Measure decision agent response time",
+        "target_time": "< 3 seconds",
+        "test_calls": 10
+      },
+      {
+        "name": "Agent Coordination Latency", 
+        "description": "Measure A2A communication overhead",
+        "target_latency": "< 1 second per agent",
+        "agents_involved": ["food", "regulatory", "festival"]
+      },
+      {
+        "name": "Concurrent Decision Handling",
+        "description": "Test multiple simultaneous decisions",
+        "concurrent_requests": 5,
+        "target_success_rate": "> 95%"
+      }
+    ],
+
+    "curl_commands": {
+      "health_checks": [
+        "curl http://localhost:8000/health",
+        "curl http://localhost:8001/health", 
+        "curl http://localhost:8002/health",
+        "curl http://localhost:8003/health",
+        "curl http://localhost:8004/health"
+      ],
+      
+      "quick_tests": [
+        "curl \"http://localhost:8004/quick-analysis?latitude=19.0760&longitude=72.8777&vehicle_type=car\"",
+        "curl \"http://localhost:8004/dining-recommendation?latitude=19.0760&longitude=72.8777&vehicle_type=bike&radius=2000\"",
+        "curl \"http://localhost:8004/route-safety?origin_lat=19.0760&origin_lng=72.8777&dest_lat=19.0800&dest_lng=72.8800&vehicle_type=bike\""
+      ],
+      
+      "master_decision": [
+        "curl -X POST \"http://localhost:8004/decide\" -H \"Content-Type: application/json\" -d @test_request.json"
+      ]
+    },
+
+    "powershell_commands": {
+      "health_checks": [
+        "Invoke-RestMethod -Uri 'http://localhost:8000/health'",
+        "Invoke-RestMethod -Uri 'http://localhost:8001/health'",
+        "Invoke-RestMethod -Uri 'http://localhost:8002/health'", 
+        "Invoke-RestMethod -Uri 'http://localhost:8003/health'",
+        "Invoke-RestMethod -Uri 'http://localhost:8004/health'"
+      ],
+      
+      "quick_tests": [
+        "Invoke-RestMethod -Uri 'http://localhost:8004/quick-analysis?latitude=19.0760&longitude=72.8777&vehicle_type=car'",
+        "Invoke-RestMethod -Uri 'http://localhost:8004/dining-recommendation?latitude=19.0760&longitude=72.8777&vehicle_type=bike&radius=2000'",
+        "Invoke-RestMethod -Uri 'http://localhost:8004/route-safety?origin_lat=19.0760&origin_lng=72.8777&dest_lat=19.0800&dest_lng=72.8800&vehicle_type=bike'"
+      ],
+      
+      "master_decision": [
+        "$body = Get-Content 'test_request.json' | ConvertFrom-Json | ConvertTo-Json -Depth 10",
+        "Invoke-RestMethod -Uri 'http://localhost:8004/decide' -Method Post -Body $body -ContentType 'application/json'"
+      ]
+    },
+
+    "expected_workflows": {
+      "dining_recommendation_flow": {
+        "step_1": "User requests dining recommendation",
+        "step_2": "Decision agent coordinates with Food Agent",
+        "step_3": "Decision agent checks Regulatory risks for vehicle type",
+        "step_4": "Decision agent checks Festival impacts",
+        "step_5": "Decision agent combines all data and provides unified recommendation",
+        "expected_output": "Restaurant recommendations with safety warnings and event alerts"
+      },
+      
+      "route_planning_flow": {
+        "step_1": "User requests route safety analysis",
+        "step_2": "Decision agent queries Regulatory for both origin and destination",
+        "step_3": "Decision agent checks Festival for road closures",
+        "step_4": "Decision agent coordinates with Transport for traffic analysis",
+        "step_5": "Decision agent provides comprehensive route safety assessment"
+      }
+    },
+
+    "integration_verification": {
+      "data_consistency": "All agents return consistent location data",
+      "error_handling": "System gracefully handles agent failures", 
+      "response_format": "All responses follow standard A2A protocol",
+      "confidence_scoring": "Decision agent properly weights agent contributions",
+      "recommendation_synthesis": "Final recommendations combine insights from multiple agents"
+    }
+  }
+}
